@@ -141,7 +141,7 @@ namespace SiteMapGenerator
                 return false;
             }
 
-            Program.Logger.Log("Saving sitemap to file...");
+            Program.Logger.Log($"Saving sitemap to file {path}");
             using FileStream fileStream = new(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, useAsync: true);
             using XmlWriter xmlWriter = XmlWriter.Create(fileStream, new XmlWriterSettings { Async = true, Indent = true });
 
