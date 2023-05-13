@@ -34,7 +34,8 @@ runs:
         mkdir ./sitemap-generator
         cd ./sitemap-generator
         git clone https://github.com/FullStackIndie/sitemap-generator.git .
-        dotnet build ./SiteMapGenerator.csproj -c Release -o ./build
+        dotnet publish ./SiteMapGenerator.csproj -c Release -r linux-x64 --self-contained true -o ./build
+        chmod +x ./build/SiteMapGenerator
         ls -R
 
     - name: Run SiteMap Generator
@@ -42,5 +43,5 @@ runs:
       run: |
         ls -R
         cd ${{ github.workspace }}
-        ./sitemap-generator/build/SiteMapGenerator.exe ${{ inputs.url }} -P="${{ inputs.sitemap_path }}" -L="${{ inputs.log_path }}"
+        ./sitemap-generator/build/SiteMapGenerator ${{ inputs.url }} -P="${{ inputs.sitemap_path }}" -L="${{ inputs.log_path }}"
 
