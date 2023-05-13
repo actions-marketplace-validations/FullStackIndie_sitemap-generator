@@ -9,7 +9,7 @@ inputs:
     description: "Your website domain to crawl. Must start with http:// or https://"
     required: true
   cache:
-    description: "Should the Sitemap be cached to be used in another job. "
+    description: "Should the Sitemap be cached to be used in another job."
     required: false
     default: "false"
   cache-key:
@@ -18,7 +18,7 @@ inputs:
     default: "sitemap"
 outputs:
   sitemap-path:
-    description: "Random number"
+    description: "Directory to the sitemap.xml file and logs"
     value: ${{ steps.sitemap-generator.outputs.sitemap}}
 runs:
   using: "composite"

@@ -14,7 +14,11 @@ This app/action will search your domain for anchor tags that have **"href"** or 
 
 ## Use In GitHub Actions
 
+I would recommend using this action in your deployment workflow after you have deployed to production. This will ensure that your sitemap is always up to date with the latest changes to your website.
+
 - url: the url you want to generate a site map for. This is required.
+
+- cache: - Should the sitemap be uploaded as an artifact to be used in another job. The default value is false. If you don't upload the artifact you can acess the sitemap using this variable **${{ steps.<id-of-your-sitemap-step>.outputs.sitemap }}**
 
 - cache-key: - the cache key to upload the site map to. The defualt value is 'sitemap'. You will use the same key to download the sitemap in your deployment workflow.
 
@@ -22,7 +26,7 @@ The Sitemap will be uploaded as **sitemap.xml**
 
  Logs are uploaded as **sitemap_generator_logs.txt**
 
-To create and upload a sitemap as an artifact use this action in your workflow
+### To create and upload a sitemap as an artifact to be downloaded in another job
 
 ```
 name: Create a Sitemap
@@ -42,10 +46,11 @@ jobs:
         uses: FullStackIndie/sitemap-generator@v1.0
         with:
           url: https://example.com
+          cache: 'true'
           cache-key: sitemap
 ```
 
-To download the sitemap use this action in your workflow
+### To download the sitemap use this action in your workflow
 
 ```
 name: Create a Sitemap
@@ -71,7 +76,7 @@ jobs:
           path: ./ 
 ```
 
-If using Asp.Net Core your paths may look like this
+### If using Asp.Net Core your paths may look like this
 
 ```
 jobs:
@@ -83,6 +88,40 @@ jobs:
           with:
             name: sitemap
             path: ./app/wwwroot/
+```
+
+### Use site map in the same job with other actions. Use the output of sitemap-id to access the path of where the sitemap is located.
+
+- sitemap-path - is the variable that contains the path to the sitemap. You can use this variable to upload the sitemap to S3 or any other storage service, or deploy to your server.
+
+```
+name: >-
+  Create SiteMap for Website and upload sitemap to S3
+
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+jobs:
+  create-sitemap-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create a Sitemap
+        id: sitemap-id
+        uses: FullStackIndie/sitemap-generator@v1.2.4
+        with:
+          url: https://portfolio.fullstackindie.net
+          cache: "false"
+          cache-key: sitemap
+
+      - name: Sync files to Aws S3
+        run: |
+          aws s3 sync ${{ steps.sitemap-id.outputs.sitemap-path } 
+          s3://my-bucket/
+
 ```
 
 ***
