@@ -42,12 +42,16 @@ runs:
         chmod +x ${{ github.workspace }}/sitemap-generator/sitemap/SiteMapGenerator
 
     - name: Run SiteMap Generator
-      id: sitemap-generator
       shell: bash
       run: |
         cd ${{ github.workspace }}/sitemap-generator/sitemap
         ./SiteMapGenerator ${{ inputs.url }} -P="." -L="."
-        echo "sitemap-path=$(echo ${{ github.workspace }}/sitemap-generator/sitemap)" >> $GITHUB_OUTPUT
+
+    - name: Export output Path
+      id: sitemap-generator
+      shell: bash
+      run: |
+        echo "sitemap=$(echo ${{ github.workspace }}/sitemap-generator/sitemap)" >> $GITHUB_OUTPUT
 
     - name: Upload SiteMap Artifact
       if: ${{ inputs.cache == 'true' }}
