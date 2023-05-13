@@ -92,17 +92,26 @@ namespace SiteMapGenerator
 
             // Use HtmlAgilityPack to select <a> elements and extract the "href" attribute
             var anchorNodes = htmlDocument.DocumentNode.SelectNodes("//a[@href]");
+            var dataRefNodes = htmlDocument.DocumentNode.SelectNodes("//a[@data-href]");
+
             if (anchorNodes != null)
             {
                 foreach (var attribute in anchorNodes.Select(a => a.Attributes))
                 {
                     var hrefAttribute = attribute["href"];
-                    var dataHrefAttribute = attribute["data-href"];
                     if (hrefAttribute != null)
                     {
                         var link = hrefAttribute.Value;
                         links.Add(link);
                     }
+                }
+            }
+            
+            if (dataRefNodes != null)
+            {
+                foreach (var attribute in dataRefNodes.Select(a => a.Attributes))
+                {
+                    var dataHrefAttribute = attribute["data-href"];
                     if (dataHrefAttribute != null)
                     {
                         var link = dataHrefAttribute.Value;

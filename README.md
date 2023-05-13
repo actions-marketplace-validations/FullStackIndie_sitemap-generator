@@ -1,11 +1,14 @@
 # sitemap-generator
 
-A C# CLI console application that generates a site map for a website.
+A C# CLI console application and GitHub Action that generates an XML site map for a website. Sitemaps are important because they help Search engines index and navigate your website and rank you higher in SEO.
 
 ## Description
 
-This is a simple site map generator that takes a URL as input and creates a site map of all the pages on the website. This is meant to be used in your GitHub Actions to generate a current site map for your website as part of your deployment workflow. You can also download it and run locally on your computer.
+This is a simple site map generator that takes a URL as input and creates a site map of all the pages on the website.
 
+This is meant to be used in your GitHub Actions to generate a current site map for your website as part of your deployment workflow. You can also download it and run locally on your computer.
+
+This app/action will search your domain for anchor tags that have **"href"** or **"data-href"** attributes and add them to the sitemap. **"data-href"** is used in the event you have modals or any dynamic javascript that updates the **"href"** attribute dynamically after the page is loaded. This will ensure that all links within your domain are included in the sitemap.
 
 ***
 
@@ -15,8 +18,9 @@ This is a simple site map generator that takes a URL as input and creates a site
 
 - cache-key: - the cache key to upload the site map to. The defualt value is 'sitemap'. You will use the same key to download the sitemap in your deployment workflow.
 
-- The Sitemap will be downloaded as **sitemap.xml** and will be overwritten if it already exists. This is intended behavior so your sitemap is always up to date. Logs are also downloaded as **sitemap_generator_logs.txt**
+The Sitemap will be uploaded as **sitemap.xml**
 
+ Logs are uploaded as **sitemap_generator_logs.txt**
 
 To create and upload a sitemap as an artifact use this action in your workflow
 
@@ -83,7 +87,11 @@ jobs:
 
 ***
 
-## Install Locally [Requires .Net 7 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
+## Install Locally on Windows and Linux [[Requires .Net 7 SDK]](<https://dotnet.microsoft.com/en-us/download/dotnet/7.0>)
+
+- Comes with dockerfile for easy deployment for Windows, Linux, MacOS or the Cloud
+
+***
 
 ### Linux
 
@@ -122,7 +130,6 @@ Restart a new shell and You should be able to type `sitemap` and see the help me
 ### Windows GitBash
 
 ```
-
 cd /c/ && mkdir sitemap-generator
 cd /c/sitemap-generator && git clone https://github.com/FullStackIndie/sitemap-generator.git .
 dotnet build ./SiteMapGenerator.csproj -c Release -o ./build
