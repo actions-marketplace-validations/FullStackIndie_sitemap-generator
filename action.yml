@@ -8,10 +8,18 @@ inputs:
   url:
     description: "Your website domain to crawl. Must start with http:// or https://"
     required: true
+  cache:
+    description: "Should the Sitemap be cached to be used in another job. "
+    required: false
+    default: "false"
   cache-key:
     description: "The cache key to upload artifact. You will use the same key to download the artifact. Default: sitemap"
     required: false
     default: "sitemap"
+outputs:
+  sitemap-path:
+    description: "Random number"
+    value: ${{ steps.sitemap-generator.outputs.sitemap}}
 runs:
   using: "composite"
   steps:
@@ -24,27 +32,29 @@ runs:
       uses: actions/checkout@v3.5.2
       with:
         repository: "FullStackIndie/sitemap-generator"
+        path: "sitemap-generator"
 
     - name: Build SiteMap Generator
       shell: bash
       run: |
-        # mkdir ./sitemap-generator
-        # cd ./sitemap-generator
-        # git clone https://github.com/FullStackIndie/sitemap-generator.git .
-        dotnet publish ./SiteMapGenerator.csproj -c Release -r linux-x64 --self-contained true -o ./build
-        chmod +x ./build/SiteMapGenerator
+        cd ${{ github.workspace }}/sitemap-generator
+        dotnet publish ./SiteMapGenerator.csproj -c Release -r linux-x64 --self-contained true -o ./sitemap
+        chmod +x ${{ github.workspace }}/sitemap-generator/sitemap/SiteMapGenerator
 
     - name: Run SiteMap Generator
+      id: sitemap-generator
       shell: bash
       run: |
-        cd ${{ github.workspace }}/build
+        cd ${{ github.workspace }}/sitemap-generator/sitemap
         ./SiteMapGenerator ${{ inputs.url }} -P="." -L="."
+        echo "sitemap-path=$(echo ${{ github.workspace }}/sitemap-generator/sitemap)" >> $GITHUB_OUTPUT
 
     - name: Upload SiteMap Artifact
+      if: ${{ inputs.cache == 'true' }}
       uses: actions/upload-artifact@v3
       with:
         name: ${{ inputs.cache-key }}
         path: |
-          ${{ github.workspace }}/build/sitemap.xml
-          ${{ github.workspace }}/build/sitemap_generator_logs.txt
+          ${{ github.workspace }}/sitemap-generator/sitemap/sitemap.xml
+          ${{ github.workspace }}/sitemap-generator/sitemap/sitemap_generator_logs.txt
         retention-days: 1
