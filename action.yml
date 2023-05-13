@@ -25,6 +25,9 @@ runs:
       with:
         dotnet-version: '7.0.x'
 
+    - name: Checkout
+      uses: actions/checkout@v3.5.2
+
     - name: Build SiteMap Generator
       shell: bash
       run: |
@@ -32,9 +35,7 @@ runs:
         cd ./sitemap-generator
         git clone https://github.com/FullStackIndie/sitemap-generator.git .
         dotnet build ./SiteMapGenerator.csproj -c Release -o ./build
-
-    - name: Checkout
-      uses: actions/checkout@v3.5.2
+        ls -R
 
     - name: Run SiteMap Generator
       shell: bash
