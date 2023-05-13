@@ -22,56 +22,68 @@ namespace SiteMapGenerator
 
         public async Task Crawl(Uri url, Uri parentUrl, CancellationToken cancellationToken)
         {
-            var htmlWeb = new HtmlWeb();
-            var htmlDocument = await htmlWeb.LoadFromWebAsync(url.ToString(), cancellationToken);
-
-            // Parse the HTML document and extract relevant information
-            // For example, extract links and metadata for the sitemap
-            var extractedLinks = ExtractLinks(htmlDocument).Distinct();
-
-            // Add the sitemap entry to the list
-            sitemapEntries.Add(new SitemapEntry
+            try
             {
-                Url = url.ToString(),
-                LastModified = DateTime.Now,
-                ChangeFrequency = ChangeFrequency.Daily
-            });
+                var htmlWeb = new HtmlWeb();
+                var htmlDocument = await htmlWeb.LoadFromWebAsync(url.ToString(), cancellationToken);
 
-            // Recursively crawl the extracted links
-            foreach (var link in extractedLinks)
-            {
-                if (invalidPaths.Any(i => link.StartsWith(i)) && !link.StartsWith("//"))
-                {
-                    Program.Logger.Log($"Skipping link '{link}' because it isnt a valid url", ConsoleColor.Yellow);
-                    continue;
-                }
-                if (link.StartsWith("#"))
-                {
-                    Program.Logger.Log($"Skipping link '{link}' because it is a fragment url", ConsoleColor.Yellow);
-                    continue;
-                }
-                if (link.Split('.').Any(p => parentUrl.Host.Contains(p)) && link != parentUrl.Host)
-                {
-                    Program.Logger.Log($"Skipping link '{link}' because it is a link for a different sub-domain", ConsoleColor.Yellow);
-                    continue;
-                }
-                if (!link.Contains(parentUrl.Host))
-                {
-                    Program.Logger.Log($"Skipping link '{link}' because it is a link for a different domain", ConsoleColor.Yellow);
-                    continue;
-                }
-                if (link.StartsWith("//"))
-                {
-                    var newLink = $"{parentUrl.Scheme}:{link}".TrimEnd('/');
+                // Parse the HTML document and extract relevant information
+                // For example, extract links and metadata for the sitemap
+                var extractedLinks = ExtractLinks(htmlDocument).Distinct();
 
-                    Program.Logger.Log($"Crawling {newLink}");
-                    await Crawl(new Uri(newLink), parentUrl, cancellationToken);
-                    continue;
-                }
+                // Add the sitemap entry to the list
+                sitemapEntries.Add(new SitemapEntry
+                {
+                    Url = url.ToString(),
+                    LastModified = DateTime.Now,
+                    ChangeFrequency = ChangeFrequency.Daily
+                });
 
-                Program.Logger.Log($"Crawling {link.TrimEnd('/')}");
-                await Crawl(new Uri(link.TrimEnd('/')), parentUrl, cancellationToken);
+                // Recursively crawl the extracted links
+                foreach (var link in extractedLinks)
+                {
+                    if (invalidPaths.Any(i => link.StartsWith(i)) && !link.StartsWith("//"))
+                    {
+                        Program.Logger.Log($"Skipping link '{link}' because it isnt a valid url", ConsoleColor.Yellow);
+                        continue;
+                    }
+                    if (link.StartsWith("#"))
+                    {
+                        Program.Logger.Log($"Skipping link '{link}' because it is a fragment url", ConsoleColor.Yellow);
+                        continue;
+                    }
+                    if (link.Split('.').Any(p => parentUrl.Host.Contains(p)) && link != parentUrl.Host)
+                    {
+                        Program.Logger.Log($"Skipping link '{link}' because it is a link for a different sub-domain", ConsoleColor.Yellow);
+                        continue;
+                    }
+                    if (!link.Contains(parentUrl.Host))
+                    {
+                        Program.Logger.Log($"Skipping link '{link}' because it is a link for a different domain", ConsoleColor.Yellow);
+                        continue;
+                    }
+                    if (link.StartsWith("//"))
+                    {
+                        var newLink = $"{parentUrl.Scheme}:{link}".TrimEnd('/');
+
+                        Program.Logger.Log($"Crawling {newLink}");
+                        await Crawl(new Uri(newLink), parentUrl, cancellationToken);
+                        continue;
+                    }
+
+                    Program.Logger.Log($"Crawling {link.TrimEnd('/')}");
+                    await Crawl(new Uri(link.TrimEnd('/')), parentUrl, cancellationToken);
+                }
             }
+            catch (HttpRequestException httpEx)
+            {
+                Program.Logger.LogError($"Error crawling {url} - {httpEx.Message}. \n Make sure host name (url) is correct");
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.LogError($"Error crawling {url} - {ex.Message} \n ---- [ StackTrace ] ----- \n {ex.StackTrace}");
+            }
+
         }
 
         private List<string> ExtractLinks(HtmlDocument htmlDocument)
@@ -132,7 +144,7 @@ namespace SiteMapGenerator
             Program.Logger.Log("Saving sitemap to file...");
             using FileStream fileStream = new(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, useAsync: true);
             using XmlWriter xmlWriter = XmlWriter.Create(fileStream, new XmlWriterSettings { Async = true, Indent = true });
-           
+
             await xmlDoc.SaveAsync(xmlWriter, cancellationToken);
             Program.Logger.Log($"Sitemap generated at {path}", consoleColor: ConsoleColor.Green);
             return true;
