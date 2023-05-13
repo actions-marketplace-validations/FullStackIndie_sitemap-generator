@@ -127,12 +127,13 @@ namespace SiteMapGenerator
             string? path = null;
             if (string.IsNullOrEmpty(siteMapPath) || siteMapPath == ".")
             {
-                path = $"{Directory.GetCurrentDirectory().Trim('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap.xml";
+                path = $"/{Directory.GetCurrentDirectory().Trim('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap.xml";
                 Program.Logger.Log($"Path is valid at {path}");
             }
             else if (Path.Exists(siteMapPath.Replace(Path.DirectorySeparatorChar, '/').TrimEnd('/')))
             {
-                path = $"{siteMapPath.Replace(Path.DirectorySeparatorChar, '/').TrimEnd('/')}/sitemap.xml";
+                siteMapPath = siteMapPath.TrimStart('/');
+                path = $"/{siteMapPath.Replace(Path.DirectorySeparatorChar, '/').TrimEnd('/')}/sitemap.xml";
                 Program.Logger.Log($"Path is valid at {path}");
             }
             else

@@ -40,7 +40,6 @@ runs:
     - name: Run SiteMap Generator
       shell: bash
       run: |
-        ls -R
         cd ${{ github.workspace }}
         ./sitemap-generator/build/SiteMapGenerator ${{ inputs.url }} -P="${{ inputs.sitemap_path }}" -L="${{ inputs.log_path }}"
 
