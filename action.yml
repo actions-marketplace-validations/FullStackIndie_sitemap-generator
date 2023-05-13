@@ -30,5 +30,6 @@ runs:
     - name: Build and Run
       shell: bash
       run: |
-        dotnet build
+        ls -R
+        dotnet build --project ./SiteMapGenerator.csproj
         dotnet run --project ./SiteMapGenerator.csproj -- ${{ inputs.url }} -P="${{ inputs.sitemap_path }}" -L="${{ inputs.log_path }}"
