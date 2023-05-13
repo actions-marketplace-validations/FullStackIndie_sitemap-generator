@@ -82,14 +82,18 @@ namespace SiteMapGenerator
             var anchorNodes = htmlDocument.DocumentNode.SelectNodes("//a[@href]");
             if (anchorNodes != null)
             {
-                foreach (var anchorNode in anchorNodes)
+                foreach (var attribute in anchorNodes.Select(a => a.Attributes))
                 {
-                    var hrefAttribute = anchorNode.Attributes["href"];
+                    var hrefAttribute = attribute["href"];
+                    var dataHrefAttribute = attribute["data-href"];
                     if (hrefAttribute != null)
                     {
                         var link = hrefAttribute.Value;
-                        // Filter and normalize the link if needed
-                        // Add the link to the list of extracted links
+                        links.Add(link);
+                    }
+                    if (dataHrefAttribute != null)
+                    {
+                        var link = dataHrefAttribute.Value;
                         links.Add(link);
                     }
                 }
