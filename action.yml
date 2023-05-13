@@ -1,9 +1,9 @@
-﻿name: "Xml SiteMap Generator"
+name: "Xml SiteMap Generator"
 description: "Generates an XML SiteMap for your website."
 author: "FullStackIndie"
 branding:
-  icon: "zap"
-  color: "gray-dark"
+  icon: "activity"
+  color: "white"
 inputs:
   url:
     description: "Your website domain to crawl. Must start with http:// or https://"
