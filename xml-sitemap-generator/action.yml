@@ -1,0 +1,31 @@
+﻿name: 'Xml SiteMap Generator'
+description: 'Generates an XML SiteMap for your website.'
+author: 'FullStackIndie'
+branding:
+  icon: 'zap'
+  color: 'gray-dark'
+inputs:
+  url:
+    description: 'Your website domain to crawl. Must start with http:// or https://'
+    required: true
+  sitemap_path:
+    description: 'The path to save the sitemap file to. Defaults to the current directory. SiteMap will be saved as sitemap.xml'
+    required: false
+    default: '.'
+  log_path:
+    description: 'The path to save the log file to. Defaults to the current directory. Log will be saved as sitemap_generator_logs.txt'
+    required: false
+    default: '.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3.0.3
+      with:
+        dotnet-version: '7.0.x'
+
+    - name: Build and Run
+      shell: bash
+      run: |
+        dotnet build
+        dotnet run --project ./SiteMapGenerator.csproj -- ${{ inputs.url }} -P="${{ inputs.sitemap_path }}" -L="${{ inputs.log_path }}"

@@ -1,6 +1,5 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 using System.Text;
-using System.Threading;
 
 namespace SiteMapGenerator
 {
@@ -13,10 +12,10 @@ namespace SiteMapGenerator
         [Argument(0, Description = "Your website domain to crawl")]
         private string Url { get; }
 
-        //[Option("-L|--log", Description = "Path to save logs.")]
-        //public string LogPath { get; }
+        [Option("-P|--path", Description = "Directory to save sitemap. Defaults to current Directory. Saves as sitemap.xml")]
+        public string? SiteMapPath { get; }
 
-        [Option("-L|--log", Description = "Path to save logs. Defaults to current Directory. Saves as sitemap_generator_logs.txt")]
+        [Option("-L|--log-path", Description = "Directory to save logs. Defaults to current Directory. Saves as sitemap_generator_logs.txt")]
         public (bool hasValue, string value) LogPath { get; }
 
 
@@ -24,7 +23,7 @@ namespace SiteMapGenerator
 
         async Task<int> OnExecuteAsync(CommandLineApplication app, CancellationToken cancellationToken = default)
         {
-            Logger.AppendLine();
+            Logger.Log("");
             Logger.AppendLine($"--- Starting sitemap generator. DateTime UTC = {DateTime.UtcNow} ---");
             if (string.IsNullOrEmpty(Url))
             {
@@ -37,12 +36,12 @@ namespace SiteMapGenerator
             Logger.Log($"Crawling {uri}");
 
             await crawler.Crawl(uri, uri, cancellationToken);
-            await crawler.GenerateSitemapAsync(cancellationToken);
             Logger.Log("Crawling complete.");
+            Logger.Log("Attempting to generate sitemap.");
+            var savedSiteMap = await crawler.GenerateSitemapAsync(SiteMapPath, cancellationToken);
 
-            if (File.Exists($"{Directory.GetCurrentDirectory()}/sitemap.xml"))
+            if (savedSiteMap)
             {
-                Logger.Log($"Sitemap generated at {Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap.xml", consoleColor: ConsoleColor.Green);
                 SaveLogs(Logger);
                 return 0;
             }
@@ -64,7 +63,7 @@ namespace SiteMapGenerator
                 logs.LogError($"Log Path {LogPath.value} was invalid. Make sure Directory exists, skipped saving logs....");
                 return;
             }
-            if(LogPath.value == ".")
+            if (LogPath.value == ".")
             {
                 logs.Log($"Saving logs to {Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", consoleColor: ConsoleColor.Green);
                 File.AppendAllText($"{Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", logs.ToString());
