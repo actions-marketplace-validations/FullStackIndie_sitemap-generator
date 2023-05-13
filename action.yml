@@ -11,7 +11,7 @@ inputs:
   cache-key:
     description: "The cache key to upload artifact. You will use the same key to download the artifact. Default: sitemap"
     required: false
-    default: ""
+    default: "sitemap"
 runs:
   using: "composite"
   steps:
@@ -37,14 +37,14 @@ runs:
     - name: Run SiteMap Generator
       shell: bash
       run: |
-        cd ${{ github.workspace }}
-        ./build/SiteMapGenerator ${{ inputs.url }} -P="." -L="."
+        cd ${{ github.workspace }}/build
+        ./SiteMapGenerator ${{ inputs.url }} -P="." -L="."
 
     - name: Upload SiteMap Artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ inputs.cache-key }}
         path: |
-          ./build/sitemap.xml
-          ./build/sitemap_generator_logs.txt
+          ${{ github.workspace }}/build/sitemap.xml
+          ${{ github.workspace }}/build/sitemap_generator_logs.txt
         retention-days: 1
