@@ -1,26 +1,19 @@
 ﻿using HtmlAgilityPack;
 using SiteMapGenerator.Data.Enums;
 using SiteMapGenerator.Models;
-using System.Xml;
-using System.Xml.Linq;
 
 namespace SiteMapGenerator
 {
-    public class WebCrawler
+    public static class WebCrawler
     {
-        private XNamespace xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9";
-        private List<SitemapEntry> sitemapEntries;
-        private HashSet<string> invalidPaths = new HashSet<string>()
+        public static List<SitemapEntry> SitemapEntries { get; set; } = new();
+        private static List<string> invalidUrls { get; set; } = new();
+        private static HashSet<string> invalidPaths = new HashSet<string>()
         {
             "/", "mailto:", "//"
         };
 
-        public WebCrawler()
-        {
-            sitemapEntries = new List<SitemapEntry>();
-        }
-
-        public async Task Crawl(Uri url, Uri parentUrl, CancellationToken cancellationToken)
+        public static async Task Crawl(Uri url, Uri parentUrl, CancellationToken cancellationToken)
         {
             try
             {
@@ -32,7 +25,7 @@ namespace SiteMapGenerator
                 var extractedLinks = ExtractLinks(htmlDocument).Distinct();
 
                 // Add the sitemap entry to the list
-                sitemapEntries.Add(new SitemapEntry
+                SitemapEntries.Add(new SitemapEntry
                 {
                     Url = url.ToString(),
                     LastModified = DateTime.Now,
@@ -42,23 +35,45 @@ namespace SiteMapGenerator
                 // Recursively crawl the extracted links
                 foreach (var link in extractedLinks)
                 {
+                    if (invalidUrls.Contains(link))
+                    {
+                        return;
+                    }
+                    if (!UrlIsValidHtmlFile(link, parentUrl))
+                    {
+                        invalidUrls.Add(link);
+                        Program.Logger.Log($"Skipping link '{link}' because it isnt a valid html/php file Url", ConsoleColor.Yellow);
+                        continue;
+                    }
                     if (invalidPaths.Any(i => link.StartsWith(i)) && !link.StartsWith("//"))
                     {
-                        Program.Logger.Log($"Skipping link '{link}' because it isnt a valid url", ConsoleColor.Yellow);
+                        invalidUrls.Add(link);
+                        Program.Logger.Log($"Skipping link '{link}' because it isnt a valid Url", ConsoleColor.Yellow);
                         continue;
                     }
                     if (link.StartsWith("#"))
                     {
-                        Program.Logger.Log($"Skipping link '{link}' because it is a fragment url", ConsoleColor.Yellow);
+                        invalidUrls.Add(link);
+                        Program.Logger.Log($"Skipping link '{link}' because it is a fragment Url", ConsoleColor.Yellow);
                         continue;
                     }
-                    if (link.Split('.').Any(p => parentUrl.Host.Contains(p)) && link != parentUrl.Host)
+                    if (!HostIsTheSame(link, parentUrl))
                     {
+                        string[] uri = link.Split('/');
+                        if (!uri[2].Contains(parentUrl.Host.Split('.')[1]))
+                        {
+                            invalidUrls.Add(link);
+                            Program.Logger.Log($"Skipping link '{link}' because it is a link for a different domain", ConsoleColor.Yellow);
+                            continue;
+                        }
+
+                        invalidUrls.Add(link);
                         Program.Logger.Log($"Skipping link '{link}' because it is a link for a different sub-domain", ConsoleColor.Yellow);
                         continue;
                     }
                     if (!link.Contains(parentUrl.Host))
                     {
+                        invalidUrls.Add(link);
                         Program.Logger.Log($"Skipping link '{link}' because it is a link for a different domain", ConsoleColor.Yellow);
                         continue;
                     }
@@ -77,7 +92,7 @@ namespace SiteMapGenerator
             }
             catch (HttpRequestException httpEx)
             {
-                Program.Logger.LogError($"Error crawling {url} - {httpEx.Message}. \n Make sure host name (url) is correct");
+                Program.Logger.LogError($"Error crawling {url} - {httpEx.Message}. \n Make sure host name (trimmedUrl) is correct");
             }
             catch (Exception ex)
             {
@@ -86,7 +101,7 @@ namespace SiteMapGenerator
 
         }
 
-        private List<string> ExtractLinks(HtmlDocument htmlDocument)
+        private static List<string> ExtractLinks(HtmlDocument htmlDocument)
         {
             var links = new List<string>();
 
@@ -106,7 +121,7 @@ namespace SiteMapGenerator
                     }
                 }
             }
-            
+
             if (dataRefNodes != null)
             {
                 foreach (var attribute in dataRefNodes.Select(a => a.Attributes))
@@ -123,63 +138,52 @@ namespace SiteMapGenerator
             return links;
         }
 
-
-
-        public async Task<bool> GenerateSitemapAsync(string? siteMapPath, CancellationToken cancellationToken)
+        private static bool HostIsTheSame(string urlToParse, Uri parentUrl)
         {
-            sitemapEntries = RemoveDuplicateUrlEntries(sitemapEntries);
-
-            // Create an XML document for the sitemap
-            var xmlDoc = new XDocument(new XDeclaration("1.0", "UTF-8", null),
-                new XElement(xmlns + "urlset", sitemapEntries.Select(ToXElement)));
-
-            string? path = null;
-            if (string.IsNullOrEmpty(siteMapPath) || siteMapPath == ".")
+            try
             {
-                path = $"/{Directory.GetCurrentDirectory().Trim('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap.xml";
-                Program.Logger.Log($"Path is valid at {path}");
+                if (!urlToParse.Contains("http") || !urlToParse.Contains(parentUrl.Host) &&
+                    !urlToParse.Contains("http"))
+                {
+                    Program.Logger.Log($"Detetcted Invalid Url {urlToParse} ... Skipping...");
+                    invalidUrls.Add(urlToParse);
+                    return false;
+                }
+                Uri uri = new Uri(urlToParse.TrimEnd('/'));
+                if (uri.Host == parentUrl.Host)
+                {
+                    return true;
+                }
             }
-            else if (Path.Exists(siteMapPath.Replace(Path.DirectorySeparatorChar, '/').TrimEnd('/')))
+            catch (UriFormatException ex)
             {
-                siteMapPath = siteMapPath.TrimStart('/');
-                path = $"/{siteMapPath.Replace(Path.DirectorySeparatorChar, '/').TrimEnd('/')}/sitemap.xml";
-                Program.Logger.Log($"Path is valid at {path}");
-            }
-            else
-            {
-                Program.Logger.LogError("SiteMap Path is invalid. Make directory exists. Exiting");
-                return false;
+                Program.Logger.Log($"Error Filtering Url {urlToParse}");
             }
 
-            Program.Logger.Log($"Saving sitemap to file {path}");
-            using FileStream fileStream = new(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, useAsync: true);
-            using XmlWriter xmlWriter = XmlWriter.Create(fileStream, new XmlWriterSettings { Async = true, Indent = true });
+            return false;
+        }
 
-            await xmlDoc.SaveAsync(xmlWriter, cancellationToken);
-            Program.Logger.Log($"Sitemap generated at {path}", consoleColor: ConsoleColor.Green);
+
+        private static bool UrlIsValidHtmlFile(string urlToParse, Uri parentUrl)
+        {
+            try
+            {
+                string[] uri = urlToParse.Split('.');
+                if ((!uri[0].Contains("http") && urlToParse.Contains(".htm")) ||
+                    (!uri[0].Contains("http") && urlToParse.Contains(".php")))
+                {
+                    return false;
+                }
+            }
+            catch (UriFormatException ex)
+            {
+                Program.Logger.Log($"Error Filtering Url {urlToParse}");
+            }
+
             return true;
         }
 
-        private XElement ToXElement(SitemapEntry entry)
-        {
-            return new XElement(xmlns + "url",
-                new XElement(xmlns + "loc", entry.Url),
-                new XElement(xmlns + "lastmod", entry.LastModified.ToString("yyyy-MM-dd")),
-                new XElement(xmlns + "changefreq", entry.ChangeFrequency.ToString().ToLowerInvariant()));
-        }
 
-        private List<SitemapEntry> RemoveDuplicateUrlEntries(List<SitemapEntry> entries)
-        {
-            var result = new List<SitemapEntry>();
-            foreach (var entry in entries)
-            {
-                if (!result.Any(r => r.Url == entry.Url))
-                {
-                    result.Add(entry);
-                }
-            }
-            return result;
-        }
+
     }
-
 }

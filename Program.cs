@@ -31,14 +31,13 @@ namespace SiteMapGenerator
                 app.ShowHelp();
                 return 0;
             }
-            var crawler = new WebCrawler();
-            Uri uri = new(Url);
+            Uri uri = new(Url.TrimEnd().Trim());
             Logger.Log($"Crawling {uri}");
 
-            await crawler.Crawl(uri, uri, cancellationToken);
+            await WebCrawler.Crawl(uri, uri, cancellationToken);
             Logger.Log("Crawling complete.");
             Logger.Log("Attempting to generate sitemap.");
-            var savedSiteMap = await crawler.GenerateSitemapAsync(SiteMapPath, cancellationToken);
+            var savedSiteMap = await SiteMap.GenerateSitemapAsync(SiteMapPath, WebCrawler.SitemapEntries, cancellationToken);
 
             if (savedSiteMap)
             {
