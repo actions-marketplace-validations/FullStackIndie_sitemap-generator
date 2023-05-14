@@ -1,4 +1,5 @@
 ﻿using SiteMapGenerator.Models;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -78,6 +79,30 @@ namespace SiteMapGenerator
 
             Program.Logger.Log($"Path is valid at {path}");
             return path;
+        }
+
+
+
+        public static void SaveLogs(StringBuilder logs, string logPath)
+        {
+            if (string.IsNullOrEmpty(logPath))
+            {
+                logs.LogError("Log Path was not provided, skipped saving logs....");
+                return;
+            }
+            if (string.IsNullOrEmpty(logPath) || !Directory.Exists(logPath) && logPath != ".")
+            {
+                logs.LogError($"Log Path {logPath} was invalid. Make sure Directory exists, skipped saving logs....");
+                return;
+            }
+            if (logPath == ".")
+            {
+                logs.Log($"Saving logs to {Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", consoleColor: ConsoleColor.Green);
+                File.AppendAllText($"{Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", logs.ToString());
+                return;
+            }
+            logs.Log($"Saving logs to {logPath.TrimEnd('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", consoleColor: ConsoleColor.Green);
+            File.AppendAllText($"{logPath.TrimEnd('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", logs.ToString());
         }
 
     }

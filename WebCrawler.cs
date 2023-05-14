@@ -24,7 +24,6 @@ namespace SiteMapGenerator
                 // For example, extract links and metadata for the sitemap
                 var extractedLinks = ExtractLinks(htmlDocument).Distinct();
 
-                // Add the sitemap entry to the list
                 SitemapEntries.Add(new SitemapEntry
                 {
                     Url = url.ToString(),

@@ -9,7 +9,7 @@ namespace SiteMapGenerator
     {
         static Task<int> Main(string[] args) => CommandLineApplication.ExecuteAsync<Program>(args);
 
-        [Argument(0, Description = "Your website domain to crawl")]
+        [Argument(0, Description = "Your website domain/url to crawl")]
         private string Url { get; }
 
         [Option("-P|--path", Description = "Directory to save sitemap. Defaults to current Directory. Saves as sitemap.xml")]
@@ -31,6 +31,7 @@ namespace SiteMapGenerator
                 app.ShowHelp();
                 return 0;
             }
+
             Uri uri = new(Url.TrimEnd().Trim());
             Logger.Log($"Crawling {uri}");
 
@@ -41,36 +42,14 @@ namespace SiteMapGenerator
 
             if (savedSiteMap)
             {
-                SaveLogs(Logger);
+                SiteMap.SaveLogs(Logger, LogPath.value);
                 return 0;
             }
             Logger.LogError($"There was an error while creating the sitemap for {Url}");
-            SaveLogs(Logger);
+            SiteMap.SaveLogs(Logger, LogPath.value);
             return 1;
         }
 
-
-        private void SaveLogs(StringBuilder logs)
-        {
-            if (!LogPath.hasValue)
-            {
-                logs.LogError("Log Path was not provided, skipped saving logs....");
-                return;
-            }
-            if (string.IsNullOrEmpty(LogPath.value) || !Directory.Exists(LogPath.value) && LogPath.value != ".")
-            {
-                logs.LogError($"Log Path {LogPath.value} was invalid. Make sure Directory exists, skipped saving logs....");
-                return;
-            }
-            if (LogPath.value == ".")
-            {
-                logs.Log($"Saving logs to {Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", consoleColor: ConsoleColor.Green);
-                File.AppendAllText($"{Directory.GetCurrentDirectory().Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", logs.ToString());
-                return;
-            }
-            logs.Log($"Saving logs to {LogPath.value.TrimEnd('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", consoleColor: ConsoleColor.Green);
-            File.AppendAllText($"{LogPath.value.TrimEnd('/').Replace(Path.DirectorySeparatorChar, '/')}/sitemap_generator_logs.txt", logs.ToString());
-        }
 
     }
 }
