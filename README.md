@@ -1,6 +1,6 @@
 # sitemap-generator
 
-A C# CLI console application and GitHub Action that generates an XML site map for a website. Sitemaps are important because they help Search engines index and navigate your website and rank you higher in SEO.
+A C# console application CLI Tool and GitHub Action that generates an XML site map for a website. Sitemaps are important because they help Search engines index and navigate your website and rank you higher in SEO.
 
 ## Description
 
@@ -22,9 +22,8 @@ I would recommend using this action in your deployment workflow after you have d
 
 - cache-key: - the cache key to upload the site map to. The defualt value is 'sitemap'. You will use the same key to download the sitemap in your deployment workflow.
 
-The Sitemap will be uploaded as **sitemap.xml**
-
- Logs are uploaded as **sitemap_generator_logs.txt**
+1. The sitemap will be named **sitemap.xml**
+2. Logs are named **sitemap_generator_logs.txt**
 
 ### To create and upload a sitemap as an artifact to be downloaded in another job
 
@@ -92,7 +91,7 @@ jobs:
 
 ### Use site map in the same job with other actions. Use the output of sitemap-id to access the path of where the sitemap is located.
 
-- sitemap-path - is the variable that contains the path to the sitemap. You can use this variable to upload the sitemap to S3 or any other storage service, or deploy to your server.
+- sitemap-path - is the variable that contains the path to the sitemap. You can use this variable to upload the sitemap to AWS S3 or any other storage service, or deploy to your server.
 
 ```
 name: >-
@@ -128,7 +127,7 @@ jobs:
 
 ## Install Locally on Windows and Linux [[Requires .Net 7 SDK]](<https://dotnet.microsoft.com/en-us/download/dotnet/7.0>)
 
-- Comes with dockerfile for easy deployment for Windows, Linux, MacOS or the Cloud
+- Comes with dockerfile for easy deployment for Windows, Linux, MacOS or the Cloud. I havent tested using it with Docker yet so no documentation yet
 
 ***
 
